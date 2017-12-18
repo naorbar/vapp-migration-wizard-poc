@@ -1,0 +1,244 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>VApp Migration Wizard</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    
+    <link rel="icon" type="image/png" href="images/favicon.ico" />
+	<link rel="stylesheet" type="text/css" href="css/index.css" />
+	<script src="js/client_utils.js"></script>
+	<script src="js/server_utils.js"></script>
+	
+	<!-- JQuery cdn: -->
+    <script src="http://code.jquery.com/jquery-3.2.1.js" integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE=" crossorigin="anonymous"></script>
+   
+    <!-- DataTables cdn: -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.15/css/jquery.dataTables.min.css" />
+	<script src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
+
+	<!-- JQuery UI cdn: -->
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+</head>
+<body>
+
+
+	<!-- This element is used to show a loading image on screen: -->
+	<div id=spinner></div>
+
+	<div id="dialog" title="Enter fields:"></div>
+
+	<div id="availableStepsTableContainer">
+		<p>Available Steps:</p>
+		<table id="availableStepsTable" class="display" cellspacing="0" width="100%">
+	        <thead>
+	            <tr>
+	                <th>ClassName</th>
+	                <th>mandatory Fields</th>
+	                <th>Optional Fields</th>
+	                <th>Supported Methods</th>
+	                <th>Step Dependencies</th>
+	            </tr>
+	        </thead>
+	        <tbody>
+	        </tbody>
+	    </table>
+    </div>
+    
+    <div id="executionPlanTableContainer">
+		<p>Execution Plan:</p>
+		<table id="executionPlanTable" class="display" cellspacing="0" width="100%">
+	        <thead>
+	            <tr>
+	            	<th>Id</th>
+	                <th>ClassName</th>
+	                <th>mandatory Fields</th>
+	                <th>Optional Fields</th>
+	            </tr>
+	        </thead>
+	        <tbody>
+	        </tbody>
+	    </table>
+    </div>
+    
+    <div>
+		<p>Run Steps:</p>
+		<div id=btnRunSteps></div>
+	</div>
+    
+	<div id="responsesTableContainer">
+		<p>Execution Status:</p>
+		<table id="responsesTable" class="display">
+	        <thead>
+	            <tr>
+	                <th>Id</th>
+	                <th>ClassName</th>
+	                <th>Result</th>
+	                <th>State</th>
+	                <th>Message</th>
+	            </tr>
+	        </thead>
+	        <tbody>
+	        </tbody>
+	    </table>
+    </div>        
+	
+
+	<script>
+		$(document).ready(function() {
+
+			$('#spinner').hide();
+			
+			console.log("Getting available steps metadata...")
+			ajaxGetStepsMetadata();
+			
+			// Initialize the available steps data table:
+			var availableStepsTable = $('#availableStepsTable').DataTable({
+				        "paging":   false,
+				        "ordering": false,
+				        "info":     false,
+				        "searching":   false
+				    });
+			
+			// Populate the available steps table data:
+			if(stepsList != null) {
+				for (var i=0; i<stepsList.length; i++) {
+					availableStepsTable.row.add([	stepsList[i].className,
+					                             	stepsList[i].mandatoryFields,
+					                             	stepsList[i].optionalFields,
+					                             	stepsList[i].supportedMethods,
+					                             	stepsList[i].stepDependencies
+					                        ]).draw(false);
+				}
+			}
+			
+			// Initialize the execution plan table:
+			var executionPlanTable = $('#executionPlanTable').DataTable({
+				        "paging":   false,
+				        "ordering": false,
+				        "info":     false,
+				        "searching":   false
+				    });
+			
+			
+			// Initialize the responses data table:
+			var responsesTable = $('#responsesTable').DataTable({
+				        "paging":   false,
+				        "ordering": false,
+				        "info":     false,
+				        "searching":   false
+				    });
+	
+			// Populate the execution plan table data:
+			// Click on available step (not table header), adds it to the steps execution plan:
+			requestsList = [];
+			var counter = 0;
+			$('#availableStepsTable tr:has(td)').on('click', function () {
+				counter++;
+				executionPlanTable.row.add([	counter,
+			                                	this.cells[0].textContent,
+			                                 	this.cells[1].textContent,
+			                                 	this.cells[2].textContent
+				                        ]).draw(false);
+				
+				// Add the step to the requestsList:
+				var membersMap = {};
+				var membersStr = this.cells[1].textContent;
+				if (membersStr != null) {
+					var membersArr = membersStr.split(",");
+					for (var i in membersArr) {
+						membersMap[membersArr[i]] = "NNN";
+					}
+				}
+					
+				var obj = {
+					id: counter,	
+					className: this.cells[0].textContent,
+		            members: membersMap,
+		            requestType: "ALL"
+		        };
+				requestsList.push(obj);   	
+			});
+			
+			// Add event listener for opening and closing execution steps to add fields details:
+		    $('#executionPlanTable').on('click', 'tr', function () {
+		    	
+		    	if (this.cells[1] != null) {
+		    		$('#dialog').dialog({
+		    		      modal: true,
+		    		      buttons: {
+		    		        Ok: function() {
+		    		        	$(this).dialog("close");
+		    		        }
+		    		      }
+		    		    });
+		    		
+		    		$('#dialog').empty();
+		    		var mandatoryFieldsArr = this.cells[2].textContent.split(",");
+		    		for (var i in mandatoryFieldsArr) {
+		    			if (mandatoryFieldsArr[i] != "") {
+		    				$('#dialog').append("<div id=" + this.cells[0].textContent + "><span>" + mandatoryFieldsArr[i] + "</span><input></input></div>");
+		    			}
+		    		}
+		    	}
+		    });
+			
+			// Handle edititng the members fields details - save the members details in the requestsList:
+		    $('#dialog').on('focusout','input', function () { 
+		    	var stepId = this.parentNode.id;
+		    	var fieldName = this.parentNode.childNodes[0].textContent;
+		    	var fieldValue = this.value;
+		    	
+		    	for (var i in requestsList) {
+					if (requestsList[i].id == stepId) {
+						requestsList[i].members[fieldName] = fieldValue;
+		    		}
+				}
+			});
+								
+		    		          	
+		    		        	
+			
+			// Run the execution plan:
+			$("#btnRunSteps").on('click', function() {
+				console.log("Running steps...")
+				runSteps(requestsList);
+			});
+			
+			// Get the status map every interval seconds:
+			setInterval(function() {
+					//console.log("Getting steps status...")
+					responsesTable.clear();
+					getStepsStatus();
+					// Add the rows to the table:
+					for (var key in responsesMap) {
+						responsesTable.row.add([   	responsesMap[key].id,
+						                            responsesMap[key].className,
+						                            responsesMap[key].result,
+						                            responsesMap[key].state,
+						                            responsesMap[key].message
+						                        ]).draw(false);
+					}
+					
+					// Change the color to red for selected text such as FAILURE:
+					$('#responsesTable td').each(function() {
+						if ($(this).text().indexOf("FAILURE") != -1 || $(this).text().indexOf("failed") != -1) {
+							$(this).addClass('red');
+						}
+						
+						if ($(this).text().indexOf("SUCCESS") != -1 || $(this).text().indexOf("COMPLETED") != -1 || $(this).text().indexOf("succeeded") != -1) {
+							$(this).addClass('green');
+						}
+								});
+					}, 500 // 10000 ms = 10 sec
+					);
+
+				});
+		
+			
+		
+		
+	</script>
+	
+</body>
+</html>

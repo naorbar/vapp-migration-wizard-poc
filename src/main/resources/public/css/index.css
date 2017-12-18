@@ -1,0 +1,137 @@
+html * {
+	font-size: 17px;
+	color: #05A;
+	font-family: monospace;
+}
+
+p {
+	font-size: 21px;
+    color: #037;
+    font-family: monospace;
+    background-color: lightskyblue;
+}
+
+#spinner {
+   position: absolute;
+   left: 50%;
+   top: 50%;
+   height:60px;
+   width:60px;
+   margin:0px auto;
+   -webkit-animation: rotation .6s infinite linear;
+   -moz-animation: rotation .6s infinite linear;
+   -o-animation: rotation .6s infinite linear;
+   animation: rotation .6s infinite linear;
+   border-left:6px solid rgba(0,174,239,.15);
+   border-right:6px solid rgba(0,174,239,.15);
+   border-bottom:6px solid rgba(0,174,239,.15);
+   border-top:6px solid rgba(0,174,239,.8);
+   border-radius:100%;
+   /* Make sure the spinner is on top of everything: */
+   z-index:1000
+}
+
+@-webkit-keyframes rotation {
+   from {-webkit-transform: rotate(0deg);}
+   to {-webkit-transform: rotate(359deg);}
+}
+@-moz-keyframes rotation {
+   from {-moz-transform: rotate(0deg);}
+   to {-moz-transform: rotate(359deg);}
+}
+@-o-keyframes rotation {
+   from {-o-transform: rotate(0deg);}
+   to {-o-transform: rotate(359deg);}
+}
+@keyframes rotation {
+   from {transform: rotate(0deg);}
+   to {transform: rotate(359deg);}
+}
+
+/* Old spinner: */
+#spinner2 {
+	/* background-repeat: no-repeat;
+    background-image: url('../images/loader.gif'); 
+    height: 64px;
+    width: 64px; 
+    display: block;
+    margin-left: auto;
+    margin-right: auto */
+    
+    position: absolute;
+	background-image: url('../images/loader.gif'); 
+    width: 64px;
+	height: 64px;
+	
+	/* Place the image in the center of the screen: */
+	top: 50%;
+    left: 50%;
+    margin-top: -32px; /* set to a negative number 1/2 of your height */
+    margin-left: -32px; /* set to a negative number 1/2 of your width */
+}
+
+#btnGetAvailableSteps {
+	display: inline-block;;
+	width: 16px;
+	height: 16px;
+	padding-right: 5px;
+	margin-bottom: -2px;
+	background-repeat: no-repeat;
+	background-image:
+		url('../images/twitter-icons.png');
+	background-position: -405px -94px;
+	cursor: pointer;
+}
+
+#btnRunSteps {
+	display: inline-block;;
+	width: 16px;
+	height: 16px;
+	padding-right: 5px;
+	margin-bottom: -2px;
+	background-repeat: no-repeat;
+	background-image:
+		url('../images/twitter-icons.png');
+	background-position: -405px -94px;
+	cursor: pointer;
+}
+
+#btnGetStepsStatus {
+	display: inline-block;;
+	width: 16px;
+	height: 16px;
+	padding-right: 5px;
+	margin-bottom: -2px;
+	background-repeat: no-repeat;
+	background-image:
+		url('../images/twitter-icons.png');
+	background-position: -405px -94px;
+	cursor: pointer;
+}
+
+/* Make the responses table stick to the bottom: */
+#responsesTableContainer {
+ /*    width: 98%;
+    position: fixed;
+    top: 65%; */
+}
+
+#availableStepsTableContainer {
+   /*  width: 98%;
+    position: fixed;
+    top: 35%; */
+}
+
+/* Highlight tables cells on hover: */
+.hover {
+    background-color: aqua;
+}
+
+/* Paint selected text in different colors: */
+.red {
+color: red;
+}
+
+.green {
+color: green;
+}
